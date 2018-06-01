@@ -8,6 +8,7 @@ const { ObjectID } = require('mongodb');
 var { mongoose } = require('./db/mongoose');
 var { Todo } = require('./models/todo');
 var { User } = require('./models/user');
+var { authenticate } = require('./middleware/authenticate');
 
 var app = express();
 const port = process.env.PORT;
@@ -95,6 +96,31 @@ app.patch('/todos/:id', (req, res) => {
   }).catch((e) => {
     res.status(400).send(e);
   })
+});
+
+// POST /users
+app.post('/users', (req, res) => {
+  console.log("masuk ga")
+  var body = _.pick(req.body, ['email', 'password']);
+  console.log(body);
+  var user = new User(body);
+
+
+  user.save().then((user) => {
+    return user.generateAuthToken();
+    // res.send(user);
+  }).then((token) => {
+    res.header('x-auth', token).send(user);
+  }).catch((e) => {
+    res.status(400).send(e);
+  })
+});
+//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1YjExMWQ2ZTdlOWQ0NzJkMjg0ZjU2MzciLCJhY2Nlc3MiOiJhdXRoIiwiaWF0IjoxNTI3ODQ4MzAyfQ.rSLmkhLW5qka2Q96MtHnyh5tipGPE_bLgp909o-8VL4
+
+
+
+app.get('/users/me', authenticate, (req, res) => {
+  res.send(req.user);
 });
 
 app.listen(port, () => {
